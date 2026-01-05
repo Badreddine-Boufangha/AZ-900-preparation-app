@@ -2,22 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <title>Azure Cloud Explorer | AZ-900 Cheat Sheet & Quiz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Azure Cloud Explorer | AZ-900 Cheat Sheet & Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-        body {
+        /* FIX 1: Strict Height Controls */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Stop the body itself from scrolling */
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
             color: #334155;
-            /* FIX: Use dvh (dynamic viewport height) for better mobile browser support */
-            height: 100dvh; 
         }
 
-        /* Custom Scrollbar - Keep only for desktop mostly */
+        /* FIX 2: Use Dynamic Viewport Height for mobile browsers */
+        body {
+            height: 100dvh; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* FIX 3: Smooth scrolling on iOS */
+        .scroll-area {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh interfering */
+        }
+
+        /* Custom Scrollbar for PC */
         @media (min-width: 768px) {
             ::-webkit-scrollbar { width: 8px; }
             ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -25,43 +43,35 @@
             ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         }
 
-        /* Card Interactions */
+        /* Card Styles */
         .service-card {
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: transform 0.2s, box-shadow 0.2s;
             border-left: 4px solid transparent;
-            /* FIX: Prevent tap highlight color on mobile */
             -webkit-tap-highlight-color: transparent;
         }
-        .service-card:active {
-             transform: scale(0.98); /* FIX: tactile feedback on touch */
-        }
-        @media (min-width: 768px) {
-            .service-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            }
-            .service-card:active { transform: none; } /* Reset for desktop */
-        }
-        
+        .service-card:active { transform: scale(0.98); }
         .service-card.active {
             border-left-color: #0ea5e9;
             background-color: #ffffff;
-            border-color: #0ea5e9; /* Added border color for visibility */
+            border-color: #0ea5e9;
+        }
+        @media (min-width: 768px) {
+            .service-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            }
         }
 
-        /* Chart Container */
+        /* Chart */
         .chart-container {
             position: relative;
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-            height: 250px; /* Reduced slightly for mobile safety */
+            height: 200px;
             display: flex;
             justify-content: center;
-            align-items: center;
         }
 
-        /* Navigation */
+        /* Nav Pills */
         .nav-pill { transition: all 0.3s ease; }
         .nav-pill.active {
             background-color: #0ea5e9;
@@ -70,243 +80,184 @@
         }
 
         /* Quiz Styles */
-        .quiz-option { transition: all 0.2s ease; }
-        .quiz-option:active { background-color: #f0f9ff; } /* Touch feedback */
-        @media (min-width: 768px) {
-            .quiz-option:hover:not(.disabled) {
-                background-color: #f0f9ff;
-                border-color: #0ea5e9;
-            }
-        }
-        
-        .quiz-option.correct {
-            border-color: #10b981 !important;
-            background-color: #d1fae5 !important;
-            color: #065f46;
-        }
-        .quiz-option.wrong {
-            border-color: #ef4444 !important;
-            background-color: #fee2e2 !important;
-            color: #991b1b;
-        }
-        .disabled { pointer-events: none; }
+        .quiz-option { transition: all 0.2s; }
+        .quiz-option:active { background-color: #f0f9ff; }
+        .quiz-option.correct { border-color: #10b981 !important; background-color: #d1fae5 !important; color: #065f46; }
+        .quiz-option.wrong { border-color: #ef4444 !important; background-color: #fee2e2 !important; color: #991b1b; }
+        .disabled { pointer-events: none; opacity: 0.7; }
 
-        /* Setup Card Styles */
-        .setup-card { transition: all 0.2s ease; }
-        .setup-card:active { transform: scale(0.98); background-color: #f0f9ff; }
-
-        /* Animations */
-        @keyframes popUp {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); opacity: 0; }
-        }
-        .xp-float {
-            position: absolute;
-            color: #fbbf24;
-            font-weight: bold;
-            font-size: 1.5rem;
-            animation: popUp 1.5s forwards;
-            pointer-events: none;
-            z-index: 50;
-        }
-        
+        /* Detail Panel Animation */
         #detail-panel { transition: transform 0.3s ease-in-out; }
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .xp-float {
+            position: absolute; color: #fbbf24; font-weight: bold; font-size: 1.5rem;
+            animation: popUp 1.5s forwards; pointer-events: none; z-index: 50;
         }
+        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
     </style>
 </head>
-<body class="h-full flex flex-col overflow-hidden">
+<body>
 
-    <header class="bg-white border-b border-slate-200 shadow-sm z-20 flex-none h-14 md:h-16">
-        <div class="container mx-auto px-2 md:px-4 h-full flex items-center justify-between">
-            <div class="flex items-center gap-2 md:gap-3">
-                <span class="text-2xl md:text-3xl">☁️</span>
+    <header class="bg-white border-b border-slate-200 shadow-sm z-30 flex-none h-14 md:h-16 relative">
+        <div class="container mx-auto px-3 h-full flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">☁️</span>
                 <div>
-                    <h1 class="font-bold text-sm md:text-xl text-slate-800 tracking-tight leading-tight">Azure Explorer</h1>
-                    <p class="text-[10px] md:text-xs text-slate-500 font-medium hidden xs:block">AZ-900 Prep</p>
+                    <h1 class="font-bold text-sm md:text-lg text-slate-800 leading-tight">Azure Explorer</h1>
+                    <p class="text-[10px] text-slate-500 font-medium">AZ-900 Prep</p>
                 </div>
             </div>
             
-            <div class="flex bg-slate-100 p-1 rounded-lg mx-2 md:mx-4 shrink-0">
-                <button onclick="switchMode('explorer')" id="btn-explorer" class="nav-pill active px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs md:text-sm font-semibold text-slate-600 transition-colors">Explorer</button>
-                <button onclick="switchMode('quiz')" id="btn-quiz" class="nav-pill px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs md:text-sm font-semibold text-slate-600 transition-colors flex items-center gap-1 md:gap-2">
+            <div class="flex bg-slate-100 p-1 rounded-lg mx-2">
+                <button onclick="switchMode('explorer')" id="btn-explorer" class="nav-pill active px-3 py-1 text-xs font-bold rounded-md text-slate-600">Explorer</button>
+                <button onclick="switchMode('quiz')" id="btn-quiz" class="nav-pill px-3 py-1 text-xs font-bold rounded-md text-slate-600 flex items-center gap-1">
                     <span>⚔️ Quiz</span>
                 </button>
             </div>
 
-            <div id="header-explorer-tools" class="hidden md:flex items-center gap-4 flex-1 justify-end">
-                <div class="relative w-64">
-                    <input type="text" id="search-input" placeholder="Search services..." 
-                        class="w-full bg-slate-100 border-none rounded-lg py-2 px-4 pl-10 focus:ring-2 focus:ring-sky-500 text-sm outline-none transition-all hover:bg-slate-50">
-                    <span class="absolute left-3 top-2.5 text-slate-400 text-lg">🔍</span>
+            <div id="header-tools" class="flex-1 flex justify-end items-center gap-2">
+                <div id="desktop-search" class="hidden md:block relative w-48 lg:w-64">
+                    <input type="text" id="search-input" placeholder="Search..." 
+                        class="w-full bg-slate-100 border-none rounded-md py-1.5 px-3 pl-8 text-sm focus:ring-2 focus:ring-sky-500">
+                    <span class="absolute left-2.5 top-1.5 text-slate-400 text-sm">🔍</span>
                 </div>
-                <div class="text-right ml-4">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Services</div>
-                    <div class="text-xl font-bold text-sky-600" id="total-count">0</div>
-                </div>
-            </div>
-
-            <div id="header-quiz-stats" class="hidden flex items-center gap-2 md:gap-4 flex-1 justify-end">
-                <div class="text-right hidden sm:block">
-                    <div class="text-[10px] text-slate-400 uppercase font-bold">Level <span id="user-level">1</span></div>
-                    <div class="h-1.5 w-16 md:w-24 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                        <div id="xp-bar" class="h-full bg-amber-400 w-0 transition-all duration-500"></div>
-                    </div>
-                </div>
-                <div class="bg-amber-50 text-amber-600 px-2 py-1 md:px-3 rounded-lg font-bold border border-amber-100 flex items-center gap-1 shadow-sm text-xs md:text-base">
+                <div class="bg-amber-50 text-amber-600 px-2 py-1 rounded-lg font-bold border border-amber-100 flex items-center gap-1 text-xs whitespace-nowrap">
                     <span>⚡</span> <span id="user-xp">0</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <div id="view-explorer" class="flex-1 flex overflow-hidden relative"> <aside class="w-64 bg-slate-50 border-r border-slate-200 flex flex-col overflow-y-auto hidden md:flex flex-none">
-            <div class="p-4 border-b border-slate-200">
-                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Categories</h2>
-                <div id="category-list" class="space-y-1"></div>
-            </div>
-            <div class="p-6 mt-auto">
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="text-xs font-bold text-slate-800 mb-2 text-center">Distribution</h3>
-                    <div class="chart-container mx-auto">
+    <div id="app-content" class="flex-1 flex overflow-hidden relative w-full">
+
+        <div id="view-explorer" class="w-full h-full flex flex-col md:flex-row relative">
+            
+            <aside class="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col flex-none z-10">
+                <div class="p-4 border-b border-slate-100 flex-none">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Categories</h2>
+                    <div id="category-list" class="space-y-1 overflow-y-auto max-h-[60vh]"></div>
+                </div>
+                <div class="mt-auto p-4 bg-slate-50 border-t border-slate-200">
+                    <div class="chart-container">
                         <canvas id="categoryChart"></canvas>
                     </div>
                 </div>
-            </div>
-        </aside>
+            </aside>
 
-        <div class="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative">
-            
-            <div class="md:hidden p-3 bg-white border-b border-slate-100">
-                <div class="relative w-full">
-                    <input type="text" id="mobile-search-input" placeholder="Search Azure services..." 
-                        class="w-full bg-slate-100 border-none rounded-lg py-2 px-4 pl-9 focus:ring-2 focus:ring-sky-500 text-sm outline-none">
-                    <span class="absolute left-3 top-2 text-slate-400">🔍</span>
+            <div class="flex-1 flex flex-col min-w-0 bg-slate-50 h-full relative">
+                
+                <div class="md:hidden bg-white border-b border-slate-200 flex-none z-20">
+                    <div class="p-2 border-b border-slate-100">
+                        <input type="text" id="mobile-search" placeholder="Search services..." 
+                            class="w-full bg-slate-100 border-none rounded-lg py-2 px-3 pl-9 text-sm focus:ring-2 focus:ring-sky-500">
+                        </div>
+                    <div id="mobile-category-list" class="flex overflow-x-auto gap-2 p-2 whitespace-nowrap scroll-area"></div>
                 </div>
-            </div>
 
-            <div class="md:hidden w-full bg-white border-b border-slate-200 p-2 overflow-x-auto whitespace-nowrap flex gap-2 flex-none shadow-sm" id="mobile-category-list"></div>
-
-            <main class="flex-1 overflow-y-auto p-4 md:p-6" id="main-scroll">
-                <div class="max-w-5xl mx-auto">
-                    <div class="mb-4 md:mb-6">
-                        <h2 id="current-category-title" class="text-xl md:text-2xl font-bold text-slate-800">All Services</h2>
-                        <p id="category-desc" class="text-slate-500 mt-1 text-xs md:text-sm">Select a card to view details.</p>
+                <main class="flex-1 scroll-area p-4 pb-24 md:p-6" id="main-scroll">
+                    <div class="max-w-5xl mx-auto">
+                        <div class="mb-4">
+                            <h2 id="current-category-title" class="text-xl font-bold text-slate-800">All Services</h2>
+                            <p id="category-desc" class="text-xs text-slate-500">Select a card to view details.</p>
+                        </div>
+                        <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
                     </div>
-                    <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 pb-24"></div>
+                </main>
+            </div>
+
+            <aside id="detail-panel" class="absolute inset-0 z-40 bg-white transform translate-x-full transition-transform duration-300 flex flex-col md:relative md:translate-x-0 md:w-96 md:border-l md:border-slate-200 md:shadow-none hidden">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 md:hidden bg-white flex-none">
+                    <span class="font-bold text-slate-700">Detail View</span>
+                    <button id="close-detail" class="bg-slate-100 p-2 rounded-full text-slate-600">✕</button>
                 </div>
-            </main>
+
+                <div class="flex-1 scroll-area p-5 md:p-6 pb-20">
+                    <div id="detail-placeholder" class="h-full flex flex-col items-center justify-center text-slate-400 text-center">
+                        <span class="text-4xl mb-2">👈</span>
+                        <p class="text-sm">Select a topic</p>
+                    </div>
+
+                    <div id="detail-content" class="hidden">
+                        <div class="flex items-start gap-3 mb-6">
+                            <div id="detail-icon" class="w-12 h-12 rounded-lg bg-sky-50 flex items-center justify-center text-2xl flex-none border border-sky-100"></div>
+                            <div>
+                                <span id="detail-category" class="text-[10px] font-bold text-sky-600 uppercase bg-sky-50 px-2 py-0.5 rounded-full"></span>
+                                <h2 id="detail-title" class="text-xl font-bold text-slate-800 mt-1 leading-tight"></h2>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <h3 class="text-xs font-bold text-slate-900 uppercase mb-1">Explanation</h3>
+                                <p id="detail-desc" class="text-sm text-slate-600 leading-relaxed"></p>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-900 uppercase mb-2">Key Facts</h3>
+                                <ul id="detail-facts" class="space-y-2"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
         </div>
 
-        <aside class="w-full md:w-96 bg-white border-l border-slate-200 shadow-2xl z-40 absolute right-0 top-0 bottom-0 transform transition-transform duration-300 translate-x-full md:relative md:translate-x-0 md:shadow-none md:block hidden flex flex-col" id="detail-panel">
-            <div class="h-full flex flex-col overflow-y-auto relative">
-                <button id="close-detail" class="md:hidden absolute top-4 right-4 bg-slate-100 p-2 rounded-full text-slate-600 hover:bg-slate-200 z-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-
-                <div id="detail-placeholder" class="flex flex-col items-center justify-center h-full text-center p-8 text-slate-400">
-                    <span class="text-6xl mb-4 opacity-50">👈</span>
-                    <h3 class="text-lg font-semibold text-slate-600">Select a Topic</h3>
-                    <p class="text-sm mt-2">Click any card to view details.</p>
-                </div>
+        <div id="view-quiz" class="hidden w-full h-full flex-col bg-slate-50 relative">
+            <div class="flex-1 scroll-area p-4 pb-20 flex flex-col items-center">
                 
-                <div id="detail-content" class="hidden p-5 md:p-6 pb-20">
-                    <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 pr-8"> <div id="detail-icon" class="w-12 h-12 rounded-lg bg-sky-50 flex items-center justify-center text-2xl border border-sky-100 flex-none"></div>
-                        <div>
-                            <span id="detail-category" class="text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded-full"></span>
-                            <h2 id="detail-title" class="text-xl md:text-2xl font-bold text-slate-800 mt-1 leading-tight"></h2>
-                        </div>
+                <div id="quiz-setup" class="w-full max-w-2xl mt-8">
+                    <div class="text-center mb-8">
+                        <span class="text-5xl">🎓</span>
+                        <h2 class="text-2xl font-bold text-slate-800 mt-2">Quiz Mode</h2>
+                        <p class="text-sm text-slate-500">Choose your challenge</p>
                     </div>
-                    <div class="space-y-6">
-                        <div>
-                            <h3 class="text-xs font-bold text-slate-900 uppercase flex items-center gap-2 mb-2">
-                                <span class="w-1 h-3 bg-sky-500 rounded-full"></span> Explanation
-                            </h3>
-                            <p id="detail-desc" class="text-slate-600 text-sm leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100"></p>
-                        </div>
-                        <div>
-                            <h3 class="text-xs font-bold text-slate-900 uppercase flex items-center gap-2 mb-2">
-                                <span class="w-1 h-3 bg-emerald-500 rounded-full"></span> Key Facts
-                            </h3>
-                            <ul id="detail-facts" class="space-y-3"></ul>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button onclick="startQuiz(15)" class="bg-white p-4 rounded-xl border border-slate-200 text-left hover:border-sky-500 transition-colors shadow-sm">
+                            <h3 class="font-bold text-slate-800">⚡ 15 Questions</h3>
+                            <p class="text-xs text-slate-500">Quick refresh</p>
+                        </button>
+                        <button onclick="startQuiz(30)" class="bg-white p-4 rounded-xl border border-slate-200 text-left hover:border-sky-500 transition-colors shadow-sm">
+                            <h3 class="font-bold text-slate-800">🧠 30 Questions</h3>
+                            <p class="text-xs text-slate-500">Standard test</p>
+                        </button>
+                        <button onclick="startQuiz('all')" class="bg-white p-4 rounded-xl border border-slate-200 text-left hover:border-sky-500 transition-colors shadow-sm md:col-span-2">
+                            <h3 class="font-bold text-slate-800">🏆 All Questions</h3>
+                            <p class="text-xs text-slate-500">The full marathon</p>
+                        </button>
                     </div>
                 </div>
-            </div>
-        </aside>
-    </div>
 
-    <div id="view-quiz" class="hidden flex-1 overflow-y-auto bg-slate-50 flex flex-col items-center p-4 md:p-6 relative">
-        
-        <div id="quiz-setup" class="w-full max-w-3xl mt-4 md:mt-10 mb-20">
-            <div class="text-center mb-6 md:mb-10">
-                <span class="text-4xl md:text-6xl">🎓</span>
-                <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mt-4">Quiz Time</h2>
-                <p class="text-slate-500 mt-2 text-sm">Select question count.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                <button onclick="startQuiz(15)" class="setup-card bg-white p-4 md:p-6 rounded-xl border border-slate-200 text-left shadow-sm group">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-2xl">⚡</span>
-                        <span class="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full">Quick</span>
+                <div id="quiz-active" class="hidden w-full max-w-2xl mt-4">
+                    <div class="flex justify-between items-end mb-2 px-1">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Q <span id="q-current">1</span>/<span id="q-total">0</span></span>
+                        <span class="text-xs font-bold text-orange-500 uppercase">Streak: <span id="q-streak">0</span> 🔥</span>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-800 group-hover:text-sky-600">15 Questions</h3>
-                    <p class="text-xs text-slate-500 mt-1">Perfect for a quick refresh.</p>
-                </button>
-
-                <button onclick="startQuiz(30)" class="setup-card bg-white p-4 md:p-6 rounded-xl border border-slate-200 text-left shadow-sm group">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-2xl">🧠</span>
-                        <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Standard</span>
+                    <div class="w-full bg-slate-200 rounded-full h-1.5 mb-6">
+                        <div id="q-progress" class="bg-sky-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-800 group-hover:text-sky-600">30 Questions</h3>
-                    <p class="text-xs text-slate-500 mt-1">Balanced practice.</p>
-                </button>
 
-                <button onclick="startQuiz('all')" class="setup-card bg-white p-4 md:p-6 rounded-xl border border-slate-200 text-left shadow-sm group md:col-span-2">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-2xl">🏆</span>
-                        <span class="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Marathon</span>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative">
+                        <div id="xp-notifier" class="hidden absolute top-4 right-4"></div>
+                        <h3 id="q-text" class="text-lg font-bold text-slate-800 mb-6 leading-snug">Loading...</h3>
+                        <div id="q-options" class="space-y-3"></div>
+                        
+                        <div id="q-explanation" class="hidden mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-slate-700 fade-in">
+                            <strong class="block text-blue-700 text-xs uppercase mb-1">Explanation</strong>
+                            <span id="q-expl-text"></span>
+                        </div>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-800 group-hover:text-sky-600">All Questions</h3>
-                    <p class="text-xs text-slate-500 mt-1">Go through the entire database.</p>
-                </button>
-            </div>
-        </div>
 
-        <div id="quiz-active" class="hidden w-full max-w-2xl mt-2 md:mt-4 pb-20">
-            <div class="flex justify-between items-end mb-3">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Question <span id="q-current">1</span> / <span id="q-total">0</span></span>
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">Streak: <span id="q-streak" class="text-orange-500 text-lg">0</span> 🔥</span>
-            </div>
-            <div class="w-full bg-slate-200 rounded-full h-2 mb-6">
-                <div id="q-progress" class="bg-sky-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-5 md:p-8 mb-6 relative overflow-hidden">
-                <div id="xp-notifier" class="absolute top-6 right-6 hidden"></div>
-                <h3 id="q-text" class="text-lg md:text-xl font-bold text-slate-800 mb-6 leading-snug">Loading...</h3>
-                <div id="q-options" class="space-y-3"></div>
-                
-                <div id="q-explanation" class="hidden mt-6 p-4 bg-sky-50 border border-sky-100 rounded-xl animate-fade-in">
-                    <h4 class="text-xs font-bold text-sky-600 uppercase mb-2 flex items-center gap-2"><span>💡</span> Explanation</h4>
-                    <p id="q-expl-text" class="text-sm text-slate-700 leading-relaxed"></p>
+                    <div class="mt-6 flex justify-between items-center">
+                        <button onclick="switchMode('quiz')" class="text-slate-400 text-xs hover:text-slate-600">Quit</button>
+                        <button id="btn-next-q" onclick="nextQuestion()" class="hidden bg-sky-600 text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-sky-200 active:scale-95 transition-transform">Next →</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="flex justify-between items-center mb-8">
-                <button onclick="switchMode('quiz')" class="text-slate-400 text-xs md:text-sm hover:text-slate-600 py-2">Quit</button>
-                <button id="btn-next-q" onclick="nextQuestion()" class="hidden bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 md:px-8 rounded-xl shadow-lg shadow-sky-200/50 transition-all transform hover:scale-105 active:scale-95 text-sm md:text-base">Next →</button>
             </div>
         </div>
     </div>
 
-    <!-- Application Logic -->
     <script>
         // --- 1. DATA STORE (COMPLETE) ---
         const azureData = [
@@ -2076,263 +2027,170 @@
         
 
         // --- STATE MANAGEMENT ---
-        const state = {
-            mode: 'explorer',
-            xp: 0,
-            level: 1,
-            quiz: {
-                currentIdx: 0,
-                score: 0,
-                streak: 0,
-                questions: [],
-                pool: rawQuizQuestions
-            }
-        };
+        const state = { mode: 'explorer', xp: 0, quiz: { currentIdx: 0, score: 0, streak: 0, questions: [], pool: rawQuizQuestions } };
 
         const dom = {
             views: { explorer: document.getElementById('view-explorer'), quiz: document.getElementById('view-quiz') },
-            quizSections: { setup: document.getElementById('quiz-setup'), active: document.getElementById('quiz-active') },
-            nav: { explorer: document.getElementById('btn-explorer'), quiz: document.getElementById('btn-quiz'), tools: document.getElementById('header-explorer-tools'), stats: document.getElementById('header-quiz-stats') },
-            stats: { xp: document.getElementById('user-xp'), level: document.getElementById('user-level'), bar: document.getElementById('xp-bar') },
-            quiz: { current: document.getElementById('q-current'), total: document.getElementById('q-total'), streak: document.getElementById('q-streak'), progress: document.getElementById('q-progress'), text: document.getElementById('q-text'), options: document.getElementById('q-options'), expl: document.getElementById('q-explanation'), explText: document.getElementById('q-expl-text'), nextBtn: document.getElementById('btn-next-q'), notifier: document.getElementById('xp-notifier') },
-            grid: document.getElementById('services-grid'),
-            catList: document.getElementById('category-list'),
-            mobileCatList: document.getElementById('mobile-category-list'),
-            search: document.getElementById('search-input'),
-            mobileSearch: document.getElementById('mobile-search-input'), // FIX: added mobile search ref
-            total: document.getElementById('total-count'),
-            detail: { panel: document.getElementById('detail-panel'), placeholder: document.getElementById('detail-placeholder'), content: document.getElementById('detail-content'), icon: document.getElementById('detail-icon'), cat: document.getElementById('detail-category'), title: document.getElementById('detail-title'), desc: document.getElementById('detail-desc'), facts: document.getElementById('detail-facts'), close: document.getElementById('close-detail') },
-            page: { title: document.getElementById('current-category-title'), desc: document.getElementById('category-desc') }
+            nav: { explorer: document.getElementById('btn-explorer'), quiz: document.getElementById('btn-quiz'), search: document.getElementById('search-input'), mSearch: document.getElementById('mobile-search'), xp: document.getElementById('user-xp') },
+            explorer: {
+                catList: document.getElementById('category-list'), mCatList: document.getElementById('mobile-category-list'), grid: document.getElementById('services-grid'), chart: document.getElementById('categoryChart'),
+                detail: { panel: document.getElementById('detail-panel'), placeholder: document.getElementById('detail-placeholder'), content: document.getElementById('detail-content'), icon: document.getElementById('detail-icon'), cat: document.getElementById('detail-category'), title: document.getElementById('detail-title'), desc: document.getElementById('detail-desc'), facts: document.getElementById('detail-facts'), close: document.getElementById('close-detail') },
+                header: { title: document.getElementById('current-category-title') }
+            },
+            quiz: {
+                setup: document.getElementById('quiz-setup'), active: document.getElementById('quiz-active'), current: document.getElementById('q-current'), total: document.getElementById('q-total'), streak: document.getElementById('q-streak'), progress: document.getElementById('q-progress'), text: document.getElementById('q-text'), options: document.getElementById('q-options'), expl: document.getElementById('q-explanation'), explText: document.getElementById('q-expl-text'), nextBtn: document.getElementById('btn-next-q'), notifier: document.getElementById('xp-notifier')
+            }
         };
 
-        // --- INIT & NAVIGATION ---
-        function init() {
-            renderCategories();
-            renderGrid();
-            initChart();
-            updateStats();
-            
-            // Listeners
-            const handleSearch = (e) => {
-                searchQuery = e.target.value.toLowerCase();
-                renderGrid();
-            };
-            
-            dom.search.addEventListener('input', handleSearch);
-            if(dom.mobileSearch) dom.mobileSearch.addEventListener('input', handleSearch); // FIX: Mobile search listener
+        // --- INIT ---
+        let currentCat = 'All';
+        let searchQuery = '';
 
-            dom.detail.close.addEventListener('click', () => {
-                dom.detail.panel.classList.add('translate-x-full', 'hidden');
-                document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active'));
+        function init() {
+            renderCats(); renderGrid(); initChart();
+            
+            // Event Listeners
+            const handleSearch = (e) => { searchQuery = e.target.value.toLowerCase(); renderGrid(); };
+            dom.nav.search.addEventListener('input', handleSearch);
+            dom.nav.mSearch.addEventListener('input', handleSearch);
+
+            dom.explorer.detail.close.addEventListener('click', () => {
+                dom.explorer.detail.panel.classList.add('translate-x-full', 'hidden');
+                // Deselect active cards
+                document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active', 'ring-2', 'ring-sky-500'));
             });
         }
 
         window.switchMode = (mode) => {
             state.mode = mode;
             if (mode === 'explorer') {
-                dom.nav.explorer.classList.add('active');
-                dom.nav.quiz.classList.remove('active');
-                dom.views.explorer.classList.remove('hidden');
-                dom.views.quiz.classList.add('hidden');
-                dom.views.quiz.classList.remove('flex'); 
-                dom.nav.tools.classList.remove('hidden');
-                dom.nav.stats.classList.add('hidden');
+                dom.nav.explorer.classList.add('active'); dom.nav.quiz.classList.remove('active');
+                dom.views.explorer.classList.remove('hidden'); dom.views.quiz.classList.add('hidden');
+                document.getElementById('desktop-search').classList.remove('hidden');
             } else {
-                dom.nav.explorer.classList.remove('active');
-                dom.nav.quiz.classList.add('active');
-                dom.views.explorer.classList.add('hidden');
-                dom.views.quiz.classList.remove('hidden');
-                dom.views.quiz.classList.add('flex');
-                dom.nav.tools.classList.add('hidden');
-                dom.nav.stats.classList.remove('hidden');
+                dom.nav.explorer.classList.remove('active'); dom.nav.quiz.classList.add('active');
+                dom.views.explorer.classList.add('hidden'); dom.views.quiz.classList.remove('hidden');
+                document.getElementById('desktop-search').classList.add('hidden');
                 showQuizSetup();
             }
         };
 
-        function showQuizSetup() {
-            dom.quizSections.setup.classList.remove('hidden');
-            dom.quizSections.active.classList.add('hidden');
-        }
-
-        window.startQuiz = (count) => {
-            let limit = state.quiz.pool.length;
-            if (count !== 'all') { limit = Math.min(count, limit); }
-            state.quiz.questions = shuffleArray([...state.quiz.pool]).slice(0, limit);
-            state.quiz.currentIdx = 0;
-            state.quiz.streak = 0;
-            state.quiz.score = 0;
-            dom.quiz.total.textContent = limit;
-            dom.quiz.streak.textContent = 0;
-            dom.quizSections.setup.classList.add('hidden');
-            dom.quizSections.active.classList.remove('hidden');
-            loadQuestion();
-        }
-
-        // --- EXPLORER LOGIC ---
-        let currentCategory = 'All';
-        let searchQuery = '';
-        let selectedServiceId = null;
-
-        function getCategories() {
-            const unique = [...new Set(azureData.map(i => i.category))];
-            return ['All', ...unique];
-        }
-
-        function renderCategories() {
-            const categories = getCategories();
+        // --- EXPLORER ---
+        function renderCats() {
+            const cats = ['All', ...new Set(azureData.map(i => i.category))];
             
-            // Desktop
-            dom.catList.innerHTML = categories.map(cat => `
-                <button onclick="setCategory('${cat}')" 
-                    class="cat-btn w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-slate-600 mb-1 hover:bg-slate-100 transition-colors ${cat === currentCategory ? 'active bg-white text-sky-600 shadow-sm border border-slate-100' : ''}">
-                    ${cat}
+            // Desktop Sidebar
+            dom.explorer.catList.innerHTML = cats.map(c => `
+                <button onclick="setCat('${c}')" class="w-full text-left px-3 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors ${c === currentCat ? 'bg-sky-50 text-sky-700 font-bold' : ''}">
+                    ${c}
                 </button>
             `).join('');
 
-            // Mobile
-            dom.mobileCatList.innerHTML = categories.map(cat => `
-                <button onclick="setCategory('${cat}')" 
-                    class="cat-btn px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${cat === currentCategory ? 'active bg-sky-500 text-white border-sky-500 shadow-md' : 'bg-white text-slate-600 border-slate-200'}">
-                    ${cat}
+            // Mobile Horizontal Scroll
+            dom.explorer.mCatList.innerHTML = cats.map(c => `
+                <button onclick="setCat('${c}')" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${c === currentCat ? 'bg-sky-500 text-white border-sky-500' : 'bg-white text-slate-600 border-slate-200'}">
+                    ${c}
                 </button>
             `).join('');
         }
 
-        window.setCategory = (cat) => {
-            currentCategory = cat;
-            renderCategories();
-            renderGrid();
-            dom.page.title.textContent = cat === 'All' ? 'All Services' : `${cat} Topics`;
-            dom.page.desc.textContent = 'Explore items in this category.';
-        };
+        window.setCat = (c) => { currentCat = c; renderCats(); renderGrid(); dom.explorer.header.title.textContent = c === 'All' ? 'All Services' : c; };
 
         function renderGrid() {
-            dom.grid.innerHTML = '';
-            const filtered = azureData.filter(item => {
-                const matchCat = currentCategory === 'All' || item.category === currentCategory;
-                const matchSearch = item.name.toLowerCase().includes(searchQuery) || 
-                                    item.desc.toLowerCase().includes(searchQuery) ||
-                                    item.category.toLowerCase().includes(searchQuery);
-                return matchCat && matchSearch;
-            });
-
-            if (filtered.length === 0) {
-                dom.grid.innerHTML = `<div class="col-span-full text-center py-20 opacity-50"><div class="text-4xl mb-2">🔭</div><p>No results found.</p></div>`;
+            dom.explorer.grid.innerHTML = '';
+            const filtered = azureData.filter(i => (currentCat === 'All' || i.category === currentCat) && (i.name.toLowerCase().includes(searchQuery) || i.category.toLowerCase().includes(searchQuery)));
+            
+            if(filtered.length === 0) {
+                dom.explorer.grid.innerHTML = `<div class="col-span-full text-center py-10 opacity-50"><div class="text-4xl">🔭</div><p>No results</p></div>`;
                 return;
             }
 
             filtered.forEach(item => {
                 const el = document.createElement('div');
-                const isActive = item.id === selectedServiceId;
-                el.className = `service-card bg-white p-5 md:p-6 rounded-xl border border-slate-200 cursor-pointer relative overflow-hidden group ${isActive ? 'active' : ''}`;
+                el.className = 'service-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-sky-300';
                 el.innerHTML = `
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-xl group-hover:bg-sky-50 transition-colors">${item.icon}</div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-1 rounded-full text-center">${item.category}</span>
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg">${item.icon}</span>
+                        <span class="text-[10px] font-bold uppercase bg-slate-100 text-slate-500 px-2 py-1 rounded-full">${item.category}</span>
                     </div>
-                    <h3 class="font-bold text-slate-800 text-lg mb-2 leading-tight">${item.name}</h3>
-                    <p class="text-xs text-slate-500 line-clamp-2">${item.desc}</p>
+                    <h3 class="font-bold text-slate-800">${item.name}</h3>
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">${item.desc}</p>
                 `;
-                el.onclick = () => showDetail(item);
-                dom.grid.appendChild(el);
+                el.onclick = () => showDetail(item, el);
+                dom.explorer.grid.appendChild(el);
             });
         }
 
-        function showDetail(item) {
-            selectedServiceId = item.id;
-            renderGrid();
-            dom.detail.icon.textContent = item.icon;
-            dom.detail.cat.textContent = item.category;
-            dom.detail.title.textContent = item.name;
-            dom.detail.desc.textContent = item.desc;
-            dom.detail.facts.innerHTML = item.facts.map(f => `<li class="text-xs text-slate-600 flex items-start gap-2"><span class="text-sky-500 mt-1">•</span> <span class="leading-relaxed">${f}</span></li>`).join('');
-            dom.detail.placeholder.classList.add('hidden');
-            dom.detail.content.classList.remove('hidden');
-            dom.detail.content.classList.remove('fade-in');
-            void dom.detail.content.offsetWidth;
-            dom.detail.content.classList.add('fade-in');
-            
-            // Mobile Slide Logic
-            dom.detail.panel.classList.remove('hidden');
-            setTimeout(() => dom.detail.panel.classList.remove('translate-x-full'), 10);
-        }
+        function showDetail(item, cardEl) {
+            // Visual feedback on grid
+            document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active', 'ring-2', 'ring-sky-500'));
+            cardEl.classList.add('active', 'ring-2', 'ring-sky-500');
 
-        function updateStats() {
-            dom.total.textContent = azureData.length;
+            // Populate
+            const d = dom.explorer.detail;
+            d.icon.textContent = item.icon; d.cat.textContent = item.category; d.title.textContent = item.name; d.desc.textContent = item.desc;
+            d.facts.innerHTML = item.facts.map(f => `<li class="text-xs text-slate-600 flex items-start gap-2"><span class="text-sky-500 mt-0.5">•</span> <span>${f}</span></li>`).join('');
+            
+            d.placeholder.classList.add('hidden');
+            d.content.classList.remove('hidden');
+            
+            // Show Panel (Mobile: Slide in, Desktop: Always visible right col)
+            // We use the 'hidden' class on the aside to control visibility initially
+            d.panel.classList.remove('hidden'); 
+            
+            // Slight delay to allow display:block to render before transform for animation
+            requestAnimationFrame(() => {
+                d.panel.classList.remove('translate-x-full');
+            });
         }
 
         function initChart() {
-            const ctx = document.getElementById('categoryChart').getContext('2d');
-            const counts = {};
-            azureData.forEach(d => counts[d.category] = (counts[d.category] || 0) + 1);
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(counts),
-                    datasets: [{
-                        data: Object.values(counts),
-                        backgroundColor: ['#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#84cc16', '#10b981', '#06b6d4', '#64748b', '#a855f7', '#ef4444', '#f59e0b', '#14b8a6', '#1e293b', '#d946ef'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: { legend: { display: false } },
-                    onClick: (evt, elements) => {
-                        if (elements.length > 0) {
-                            const cat = Object.keys(counts)[elements[0].index];
-                            setCategory(cat);
-                        }
-                    }
-                }
-            });
+            const ctx = dom.explorer.chart.getContext('2d');
+            const counts = {}; azureData.forEach(d => counts[d.category] = (counts[d.category] || 0) + 1);
+            new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#0ea5e9', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
         }
 
-        // --- QUIZ LOGIC ---
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
+        // --- QUIZ ---
+        function showQuizSetup() { dom.quiz.setup.classList.remove('hidden'); dom.quiz.active.classList.add('hidden'); }
+        window.startQuiz = (count) => {
+            let limit = count === 'all' ? state.quiz.pool.length : Math.min(count, state.quiz.pool.length);
+            state.quiz.questions = state.quiz.pool.sort(() => 0.5 - Math.random()).slice(0, limit);
+            state.quiz.currentIdx = 0; state.quiz.score = 0; state.quiz.streak = 0;
+            dom.quiz.total.textContent = limit; dom.quiz.streak.textContent = 0;
+            dom.quiz.setup.classList.add('hidden'); dom.quiz.active.classList.remove('hidden');
+            loadQ();
         }
 
-        function loadQuestion() {
+        function loadQ() {
             const q = state.quiz.questions[state.quiz.currentIdx];
             dom.quiz.current.textContent = state.quiz.currentIdx + 1;
-            dom.quiz.progress.style.width = `${((state.quiz.currentIdx) / state.quiz.questions.length) * 100}%`;
+            dom.quiz.progress.style.width = `${(state.quiz.currentIdx / state.quiz.questions.length) * 100}%`;
             dom.quiz.text.textContent = q.q;
-            dom.quiz.expl.classList.add('hidden');
-            dom.quiz.nextBtn.classList.add('hidden');
-            dom.quiz.options.innerHTML = q.opts.map((opt, idx) => `
-                <button onclick="checkAnswer(${idx})" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 text-slate-700 font-medium hover:shadow-md flex justify-between items-center group transition-all text-sm md:text-base">
-                    <span>${opt}</span>
-                    <span class="opacity-0 group-hover:opacity-100 text-slate-400">➜</span>
+            dom.quiz.expl.classList.add('hidden'); dom.quiz.nextBtn.classList.add('hidden');
+            dom.quiz.options.innerHTML = q.opts.map((o, i) => `
+                <button onclick="check(${i})" class="quiz-option w-full text-left p-4 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 text-sm">
+                    ${o}
                 </button>
             `).join('');
         }
 
-        window.checkAnswer = (selectedIdx) => {
+        window.check = (idx) => {
             const q = state.quiz.questions[state.quiz.currentIdx];
-            const buttons = dom.quiz.options.children;
-            const isCorrect = selectedIdx === q.a;
-            Array.from(buttons).forEach(btn => btn.classList.add('disabled', 'opacity-60'));
-            if (isCorrect) {
-                buttons[selectedIdx].classList.remove('opacity-60');
-                buttons[selectedIdx].classList.add('correct');
-                addXP(100);
+            const btns = dom.quiz.options.children;
+            Array.from(btns).forEach(b => b.classList.add('disabled'));
+            
+            if(idx === q.a) {
+                btns[idx].classList.add('correct');
                 state.quiz.streak++;
-                triggerConfetti();
+                state.xp += 50;
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
             } else {
-                buttons[selectedIdx].classList.remove('opacity-60');
-                buttons[selectedIdx].classList.add('wrong');
-                buttons[q.a].classList.remove('opacity-60');
-                buttons[q.a].classList.add('correct');
+                btns[idx].classList.add('wrong');
+                btns[q.a].classList.add('correct');
                 state.quiz.streak = 0;
             }
+            
+            dom.nav.xp.textContent = state.xp;
             dom.quiz.streak.textContent = state.quiz.streak;
             dom.quiz.explText.textContent = q.expl;
             dom.quiz.expl.classList.remove('hidden');
@@ -2341,53 +2199,13 @@
 
         window.nextQuestion = () => {
             state.quiz.currentIdx++;
-            if (state.quiz.currentIdx < state.quiz.questions.length) {
-                loadQuestion();
-            } else {
-                finishQuiz();
+            if(state.quiz.currentIdx < state.quiz.questions.length) loadQ();
+            else {
+                dom.quiz.text.textContent = "🎉 Quiz Complete!";
+                dom.quiz.options.innerHTML = `<div class="text-center p-6"><button onclick="showQuizSetup()" class="bg-sky-600 text-white px-6 py-2 rounded-lg">New Quiz</button></div>`;
+                dom.quiz.expl.classList.add('hidden'); dom.quiz.nextBtn.classList.add('hidden');
             }
         };
-
-        function finishQuiz() {
-            dom.quiz.text.textContent = "🎉 Challenge Complete!";
-            dom.quiz.options.innerHTML = `
-                <div class="text-center p-8">
-                    <div class="text-6xl mb-4">🏆</div>
-                    <p class="text-slate-600 mb-6">You've completed this set of questions!</p>
-                    <button onclick="showQuizSetup()" class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-transform hover:scale-105">Take Another Quiz</button>
-                </div>
-            `;
-            dom.quiz.expl.classList.add('hidden');
-            dom.quiz.nextBtn.classList.add('hidden');
-            dom.quiz.progress.style.width = '100%';
-        }
-
-        // --- GAMIFICATION ---
-        function addXP(amount) {
-            state.xp += amount;
-            const newLevel = Math.floor(state.xp / 500) + 1;
-            if (newLevel > state.level) {
-                state.level = newLevel;
-                triggerConfetti({ particleCount: 200, spread: 100 }); 
-            }
-            dom.stats.xp.textContent = state.xp;
-            dom.stats.level.textContent = state.level;
-            const progress = (state.xp % 500) / 500 * 100;
-            dom.stats.bar.style.width = `${progress}%`;
-            const floater = document.createElement('div');
-            floater.className = 'xp-float';
-            floater.textContent = `+${amount} XP`;
-            dom.quiz.notifier.innerHTML = '';
-            dom.quiz.notifier.appendChild(floater);
-            dom.quiz.notifier.classList.remove('hidden');
-            setTimeout(() => { dom.quiz.notifier.classList.add('hidden'); }, 1500);
-        }
-
-        function triggerConfetti(opts = {}) {
-            if (typeof confetti === 'function') {
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#0ea5e9', '#f59e0b', '#10b981'], ...opts });
-            }
-        }
 
         init();
     </script>
